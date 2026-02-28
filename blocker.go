@@ -107,16 +107,5 @@ func (b *Blocker) Tick(tickNum int, o *Order) error {
 }
 
 func (b *Blocker) canAccept(tickNum int, o *Order, numOrders int) bool {
-	if b.condition == nil {
-		if b.receiver == nil {
-			return true
-		}
-
-	} else if !b.condition(o, numOrders) {
-		return false
-	}
-	if b.receiver == nil {
-		return true
-	}
-	return b.receiver.CanAccept(tickNum)
+	return (b.condition == nil || b.condition(o, numOrders)) && (b.receiver == nil || b.receiver.CanAccept(tickNum))
 }
