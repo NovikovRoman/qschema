@@ -36,6 +36,9 @@ func (s *Source) Tick(tickNum int, _ *Order) error {
 	if s.receiver == nil {
 		return fmt.Errorf("tick %d источник %s: нет приемника", tickNum, s.name)
 	}
+	if tickNum == s.lastTickNum {
+		return nil
+	}
 	s.lastTickNum = tickNum
 	s.countdown--
 	if s.countdown > 0 {

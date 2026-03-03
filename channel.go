@@ -86,9 +86,7 @@ func (c *Channel) Tick(tickNum int, o *Order) error {
 	channelOrder := c.order
 	c.order = o
 	c.countdown = c.ticks
-	if channelOrder != nil {
-		c.numOrders++
-	}
+	c.numOrders++
 	return c.receiver.Tick(tickNum, channelOrder)
 }
 

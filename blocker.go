@@ -21,7 +21,7 @@ func NewBlockers(name string, items ...*Blocker) *Blockers {
 }
 
 func (b *Blockers) Report() string {
-	itemReports := []string{}
+	itemReports := make([]string, 0, len(b.items)*2)
 	for _, item := range b.items {
 		itemReports = append(itemReports, item.Report())
 	}
