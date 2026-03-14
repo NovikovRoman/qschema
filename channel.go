@@ -75,7 +75,6 @@ func (c *Channel) Tick(tickNum int, o *Order) error {
 
 	// проверить дальше по схеме
 	if c.receiver == nil {
-		fmt.Println("order", c.order, o)//!
 		c.order = o
 		c.countdown = c.ticks
 		c.numOrders++
