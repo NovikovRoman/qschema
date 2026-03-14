@@ -10,7 +10,7 @@ var (
 )
 
 type Order struct {
-	Num int
+	ID string
 }
 
 type Element interface {

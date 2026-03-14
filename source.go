@@ -47,7 +47,7 @@ func (s *Source) Tick(tickNum int, _ *Order) error {
 
 	s.countdown = s.ticks
 	s.numOrders++
-	return s.receiver.Tick(tickNum, &Order{Num: s.numOrders})
+	return s.receiver.Tick(tickNum, &Order{ID: fmt.Sprintf("%s:%d", s.name, s.numOrders)})
 }
 
 func (s *Source) CanAccept(tickNum int) bool {

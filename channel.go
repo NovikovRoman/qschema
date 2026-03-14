@@ -28,7 +28,7 @@ func (c *Channel) Report() string {
 	}
 	orderNum := "-"
 	if c.order != nil {
-		orderNum = fmt.Sprintf("#%d", c.order.Num)
+		orderNum = fmt.Sprintf("#%s", c.order.ID)
 	}
 	return fmt.Sprintf("Канал %s: last tick: %d, orders: %d, на обработке заявка: %s\n%s",
 		c.name, c.lastTickNum, c.numOrders, orderNum, report)
@@ -48,10 +48,10 @@ func (c *Channel) Tick(tickNum int, o *Order) error {
 
 	if o == nil {
 		if c.countdown <= 0 {
-			o = c.order
-			c.order = nil
-			if o != nil {
+			if c.order != nil {
 				c.numOrders++
+				o = c.order
+				c.order = nil
 			}
 		}
 		if c.receiver == nil {
@@ -75,8 +75,10 @@ func (c *Channel) Tick(tickNum int, o *Order) error {
 
 	// проверить дальше по схеме
 	if c.receiver == nil {
+		fmt.Println("order", c.order, o)//!
 		c.order = o
 		c.countdown = c.ticks
+		c.numOrders++
 		return nil
 	}
 	if !c.receiver.CanAccept(tickNum) {

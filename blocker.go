@@ -55,7 +55,7 @@ func (b *Blockers) Tick(tickNum int, o *Order) error {
 			sendOrder := o
 			o = nil
 			if err := item.Tick(tickNum, sendOrder); err != nil {
-				return fmt.Errorf("блокиратор %s: заявка #%d %w", item.name, sendOrder.Num, err)
+				return fmt.Errorf("блокиратор %s: заявка #%s %w", item.name, sendOrder.ID, err)
 			}
 			continue
 		}

@@ -66,12 +66,12 @@ func (s *Storage) Tick(tickNum int, order *Order) error {
 		return fmt.Errorf("накопитель %s: номер tick меньше уже обработанного", s.name)
 	}
 
-	if order != nil && tickNum > s.lastTickNum {
+	if order != nil {
 		s.orders.push(order)
 	}
 	s.lastTickNum = tickNum
 
-	if s.moveTickNum < tickNum && s.orders.len() > 0 {
+	if s.moveTickNum < tickNum && s.orders.len() > 0 { // можно пробросить из хранилища
 		if s.receiver == nil {
 			s.moveTickNum = tickNum
 			s.numOrders++
