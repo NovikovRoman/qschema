@@ -2,8 +2,8 @@ package qschema
 
 import "fmt"
 
-// orderQueue ring buffer фиксированной емкости.
-// Исключает неограниченный рост backing array.
+// orderQueue кольцевой буфер фиксированной емкости.
+// Исключает неограниченный рост базового массива.
 type orderQueue struct {
 	buf  []*Order
 	head int
@@ -29,6 +29,12 @@ func (q *orderQueue) pop() {
 	q.n--
 }
 
+func (q *orderQueue) popBack() {
+	index := (q.head + q.n - 1) % len(q.buf)
+	q.buf[index] = nil
+	q.n--
+}
+
 func (q *orderQueue) len() int { return q.n }
 
 type Storage struct {
@@ -42,13 +48,18 @@ type Storage struct {
 	receiver    Element
 }
 
+// NewStorage создает накопитель с неотрицательной емкостью.
+// При недопустимой емкости Tick возвращает ошибку, а CanAccept false.
 func NewStorage(name string, volume int, receiver Element) *Storage {
+	capacity := 0
+	if volume >= 0 && volume < int(^uint(0)>>1) {
+		capacity = volume + 1
+	}
 	return &Storage{
 		name:     name,
 		volume:   volume,
 		receiver: receiver,
-		// volume+1, тк проверка переполнения выполняется после добавления.
-		orders: newOrderQueue(volume + 1),
+		orders:   newOrderQueue(capacity),
 	}
 }
 
@@ -62,12 +73,21 @@ func (s *Storage) Report() string {
 }
 
 func (s *Storage) Tick(tickNum int, order *Order) error {
+	if len(s.orders.buf) == 0 {
+		return fmt.Errorf("накопитель %s: недопустимая емкость %d", s.name, s.volume)
+	}
 	if tickNum < s.lastTickNum {
 		return fmt.Errorf("накопитель %s: номер tick меньше уже обработанного", s.name)
 	}
 
 	if order != nil {
 		s.orders.push(order)
+		// Удалить входящую заявку, если после этого тика ей не хватило места.
+		defer func() {
+			if s.orders.len() > s.volume {
+				s.orders.popBack()
+			}
+		}()
 	}
 	s.lastTickNum = tickNum
 
@@ -104,11 +124,11 @@ func (s *Storage) Tick(tickNum int, order *Order) error {
 }
 
 func (s *Storage) CanAccept(tickNum int) bool {
-	if s.receiver == nil {
-		return tickNum > s.lastTickNum && s.orders.len() < s.volume
+	if len(s.orders.buf) == 0 || tickNum < s.lastTickNum {
+		return false
 	}
-	if s.orders.len() >= s.volume {
-		return tickNum > s.lastTickNum && s.receiver.CanAccept(tickNum)
+	if s.orders.len() < s.volume {
+		return true
 	}
-	return true
+	return s.moveTickNum < tickNum && (s.receiver == nil || s.receiver.CanAccept(tickNum))
 }

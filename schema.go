@@ -20,7 +20,8 @@ type Element interface {
 }
 
 type Schema struct {
-	elements []Element
+	elements    []Element
+	lastTickNum int
 }
 
 func New(elements ...Element) *Schema {
@@ -37,10 +38,13 @@ func (s *Schema) Report() string {
 	return strings.Join(reports, "\n\n")
 }
 
+// Run продвигает схему на указанное количество тиков. Если элемент возвращает
+// ошибку, частично обработанный тик не повторяется при следующем вызове.
 func (s *Schema) Run(ticks int) error {
-	for n := 1; n <= ticks; n++ {
+	for range ticks {
+		s.lastTickNum++
 		for _, el := range s.elements {
-			if err := el.Tick(n, nil); err != nil {
+			if err := el.Tick(s.lastTickNum, nil); err != nil {
 				return err
 			}
 		}

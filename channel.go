@@ -47,17 +47,20 @@ func (c *Channel) Tick(tickNum int, o *Order) error {
 	}
 
 	if o == nil {
-		if c.countdown <= 0 {
-			if c.order != nil {
-				c.numOrders++
-				o = c.order
-				c.order = nil
+		if c.order == nil || c.countdown > 0 {
+			if c.receiver != nil {
+				return c.receiver.Tick(tickNum, nil)
 			}
-		}
-		if c.receiver == nil {
 			return nil
 		}
-		return c.receiver.Tick(tickNum, o)
+		if c.receiver != nil {
+			if err := c.receiver.Tick(tickNum, c.order); err != nil {
+				return err
+			}
+		}
+		c.order = nil
+		c.numOrders++
+		return nil
 	}
 
 	if c.order == nil {
@@ -84,11 +87,13 @@ func (c *Channel) Tick(tickNum int, o *Order) error {
 		return fmt.Errorf("канал %s: данные еще на обработке (%w)", c.name, ErrBlockingScheme)
 	}
 
-	channelOrder := c.order
+	if err := c.receiver.Tick(tickNum, c.order); err != nil {
+		return err
+	}
 	c.order = o
 	c.countdown = c.ticks
 	c.numOrders++
-	return c.receiver.Tick(tickNum, channelOrder)
+	return nil
 }
 
 func (c *Channel) CanAccept(tickNum int) bool {
@@ -96,7 +101,8 @@ func (c *Channel) CanAccept(tickNum int) bool {
 		return true
 	}
 	// рассчитать пора ли отправлять дальше
-	canSend := tickNum > c.lastTickNum && c.countdown <= 1
+	canSend := (tickNum == c.lastTickNum && c.countdown <= 0) ||
+		(tickNum > c.lastTickNum && c.countdown <= 1)
 	if !canSend {
 		return false
 	}

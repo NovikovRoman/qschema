@@ -7,7 +7,7 @@ import (
 	"github.com/NovikovRoman/qschema"
 )
 
-func main() {
+func newSchema() *qschema.Schema {
 	ch4 := qschema.NewChannel("K4", 2, nil)
 	ch5 := qschema.NewChannel("K5", 2, nil)
 
@@ -78,7 +78,11 @@ func main() {
 	source2 := qschema.NewSource("I2", 2, sourceBlockers2)
 	source3 := qschema.NewSource("I3", 2, sourceBlockers3)
 
-	schema := qschema.New(source1, source2, source3)
+	return qschema.New(source1, source2, source3)
+}
+
+func main() {
+	schema := newSchema()
 	if err := schema.Run(10); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
